@@ -3,4 +3,4 @@
 #include <fstream>
 #include <sys/stat.h>
 
-int loadFileIntoMemory(std::string filePath, char *&pBuffer);
+char *loadFileIntoMemory(std::string filePath, int &length);

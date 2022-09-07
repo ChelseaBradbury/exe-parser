@@ -1,19 +1,15 @@
 #include "file_io.h"
 
-int loadFileIntoMemory(std::string filePath, char *&pBuffer) {
+char *loadFileIntoMemory(std::string filePath, int &length)
+{
   std::ifstream file(filePath, std::ios::binary | std::ios::ate);
-  int length = file.tellg();
+  length = file.tellg();
   file.seekg(0, std::ios::beg);
 
-  pBuffer = new char[length + 1];
-  pBuffer[length] = 0x00;
+  char *pFile = new char[length + 1];
+  pFile[length] = 0x00;
 
-  if (file.read(pBuffer, length)) {
-    file.close();
-    return length;
-  }
+  file.read(pFile, length);
   file.close();
-  delete[] pBuffer;
-  pBuffer = NULL;
-  return 0;
+  return pFile;
 }
