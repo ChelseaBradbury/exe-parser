@@ -4,6 +4,8 @@
 
 #include "cpputils/struct_pack.h"
 
+#define IMAGE_NUMBEROF_DIRECTORY_ENTRIES 0x10
+
 PACK(struct PeHeader {
     uint16_t Machine;
     uint16_t NumberOfSections;
@@ -12,6 +14,11 @@ PACK(struct PeHeader {
     uint32_t NumberOfSymbols;
     uint16_t SizeOfOptionalHeader;
     uint16_t Characteristics;
+});
+
+PACK(struct IMAGE_DATA_DIRECTORY {
+    uint32_t VirtualAddress;
+    uint32_t Size;
 });
 
 PACK(struct PeOptionalHeader {
@@ -46,5 +53,5 @@ PACK(struct PeOptionalHeader {
     uint32_t SizeOfHeapCommit;
     uint32_t LoaderFlags;
     uint32_t NumberOfRvaAndSizes;
-    // IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
+    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
 });
