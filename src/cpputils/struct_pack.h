@@ -5,8 +5,8 @@
 #endif
 
 #ifdef _MSC_VER
-#define PACK(__Declaration__) \
-    __pragma(pack(push, 1)) __Declaration__ __pragma(pack(pop))
+#define PACK(__Declaration__)                                                  \
+  __pragma(pack(push, 1)) __Declaration__ __pragma(pack(pop))
 #endif
 
 /* Prevents automatic byte alignment (to four bytes, or whatever) of struct data
