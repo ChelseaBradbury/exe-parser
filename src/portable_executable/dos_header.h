@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "cpputils/struct_pack.h"
+#include "../cpputils/struct_pack.h"
 
 PACK(struct DosHeader {
     uint16_t e_magic;    // Magic number

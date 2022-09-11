@@ -2,9 +2,7 @@
 
 #include "cpputils/file_io.h"
 
-#include "dos_header.h"
-#include "pe_header.h"
-#include "pe_section.h"
+#include "portable_executable/portable_executable.h"
 
 void printHex(uint8_t *pData, uint32_t numBytes)
 {
@@ -23,36 +21,30 @@ int main()
     int length;
     char *pFile = loadFileIntoMemory(filepath, length);
 
-    printf("length: %i\n", length);
+    printf("PE file length: %i\n", length);
 
-    DosHeader dosHeader;
-    memcpy(&dosHeader, pFile, sizeof(dosHeader));
+    auto headerCollection = getHeaders((uint8_t *)pFile);
+
+    printf("got headers\n");
+
+    DosHeader dosHeader = headerCollection.dosHeader;
 
     printf("dosHeader.e_magic: 0x%04X\n", dosHeader.e_magic);
     printf("dosHeader.e_lfanew: 0x%08X\n", dosHeader.e_lfanew);
     printf("dosHeader numPages: %i\n", dosHeader.e_cp);
 
-    uint32_t peMagic;
-    memcpy(&peMagic, pFile + dosHeader.e_lfanew, sizeof(peMagic));
-
-    PeHeader peHeader;
-    memcpy(&peHeader, pFile + dosHeader.e_lfanew + sizeof(peMagic), sizeof(peHeader));
-
-    // printHex((uint8_t *)(pFile + dosHeader.e_lfanew), 16);
+    PeHeader peHeader = headerCollection.peHeader;
 
     printf("pe machine 0x%04X\n", peHeader.Machine);
     printf("pe sections %i\n", peHeader.NumberOfSections);
     printf("pe symbols %i\n", peHeader.NumberOfSymbols);
     printf("pe optional size %i\n", peHeader.SizeOfOptionalHeader);
 
-    PeOptionalHeader peOptional;
-    memcpy(&peOptional, pFile + dosHeader.e_lfanew + sizeof(peMagic) + sizeof(peHeader), sizeof(peOptional));
+    PeOptionalHeader peOptional = headerCollection.opHeader;
 
     printf("image major %i minor %i \n", peOptional.MajorImageVersion, peOptional.MinorImageVersion);
     printf("OS major %i minor %i \n", peOptional.MajorOperatingSystemVersion, peOptional.MinorOperatingSystemVersion);
     printf("linker major %i minor %i \n", peOptional.MajorLinkerVersion, peOptional.MinorLinkerVersion);
-
-    uint32_t sectionOffset = dosHeader.e_lfanew + sizeof(peMagic) + sizeof(peHeader) + sizeof(peOptional);
 
     // .text = code
     // .rdata = read-only data
@@ -61,12 +53,20 @@ int main()
     // .rsrc = resource
     // .reloc = relocate
 
-    PeSectionHeader peSection;
-    for (int i = 0; i < peHeader.NumberOfSections; i++)
+    for (int i = 0; i < headerCollection.peHeader.NumberOfSections; i++)
     {
-        memcpy(&peSection, pFile + sectionOffset + (sizeof(peSection) * i), sizeof(peSection));
+        auto pSectionHeader = headerCollection.sectionHeaders[i];
 
-        printf("section %i name %s\n", i, peSection.Name);
+        printf("section %i name %s\n", i, pSectionHeader.Name);
+
+        printf("  VirtualAddress %p\n", pSectionHeader.VirtualAddress);
+        printf("  SizeOfRawData %p\n", pSectionHeader.SizeOfRawData);
+        printf("  PointerToRawData %p\n", pSectionHeader.PointerToRawData);
+        printf("  PointerToRelocations %p\n", pSectionHeader.PointerToRelocations);
+        printf("  PointerToLinenumbers %p\n", pSectionHeader.PointerToLinenumbers);
+        printf("  NumberOfRelocations %p\n", pSectionHeader.NumberOfRelocations);
+        printf("  NumberOfLinenumbers %p\n", pSectionHeader.NumberOfLinenumbers);
+        printf("  Characteristics %p\n", pSectionHeader.Characteristics);
     }
 
     return 0;
