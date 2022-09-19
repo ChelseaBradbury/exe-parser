@@ -4,6 +4,7 @@
 #include "pe_header.h"
 
 #include "import_section.h"
+#include "resource_section.h"
 
 #include "memory_map.h"
 
@@ -24,6 +25,8 @@ protected:
   void MapMemory();
 
   void MapImportDirectories();
+
+  void ParseResourceSection();
 
   uint8_t* m_pFile = nullptr;
   uint32_t m_fileSizeBytes = 0;

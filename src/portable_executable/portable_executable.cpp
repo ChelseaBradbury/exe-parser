@@ -44,6 +44,8 @@ PortableExecutable::PortableExecutable(uint8_t* pFile, uint32_t fileSizeBytes) {
   this->MapMemory();
 
   this->MapImportDirectories();
+
+  this->ParseResourceSection();
 }
 
 PortableExecutable::~PortableExecutable() {}
@@ -109,6 +111,56 @@ void PortableExecutable::MapImportDirectories() {
     uint32_t nameFileOffset = this->m_memoryMap.GetFileOffset(imp.NameRVA);
     printf("import %s\n", (char*)(this->m_pFile + nameFileOffset));
   }
+  printf("\n");
+}
+
+void PortableExecutable::ParseResourceSection() {
+  // Resource Directory
+  auto dir = this->m_pOpHeader->DataDirectory[2];
+
+  if (dir.Size == 0) {
+    // No resources
+    return;
+  }
+
+  uint32_t fileOffset = this->m_memoryMap.GetFileOffset(dir.VirtualAddress);
+
+  auto pResourceHeader = (ResourceDirectoryHeader*)(this->m_pFile + fileOffset);
+
+  PrintHex(this->m_pFile + fileOffset, 64, 16);
+
+  printf("ResourceDirectoryHeader:\n");
+  printf("version %i.%i\n", pResourceHeader->MajorVersion,
+         pResourceHeader->MinorVersion);
+  printf("NumberOfNameEntries: %i\n", pResourceHeader->NumberOfNameEntries);
+  printf("NumberOfIdEntries: %i\n", pResourceHeader->NumberOfIdEntries);
+  printf("\n");
+
+  auto pNameEntries =
+      (ResourceDirectoryEntry*)(this->m_pFile + fileOffset +
+                                sizeof(ResourceDirectoryHeader));
+
+  auto pIdEntries = &pNameEntries[pResourceHeader->NumberOfNameEntries];
+
+  for (uint32_t i = 0; i < pResourceHeader->NumberOfNameEntries; i++) {
+    auto entry = pNameEntries[i];
+    printf("resource name entry %i\n", i);
+    printf("id: %i\n", entry.IntegerId);
+    printf("DataEntryOffset 0x%08X\n", entry.DataEntryOffset);
+    printf("SubdirectoryOffset 0x%08X\n", entry.SubdirectoryOffset);
+    printf("\n");
+  }
+
+  for (uint32_t i = 0; i < pResourceHeader->NumberOfIdEntries; i++) {
+    auto entry = pIdEntries[i];
+    printf("resource id entry %i\n", i);
+    printf("NameOffset: 0x%08X\n", entry.NameOffset);
+    printf("IntegerId: 0x%08X\n", entry.IntegerId);
+    printf("DataEntryOffset 0x%08X\n", entry.DataEntryOffset);
+    printf("SubdirectoryOffset 0x%08X\n", entry.SubdirectoryOffset);
+    printf("\n");
+  }
+
   printf("\n");
 }
 
