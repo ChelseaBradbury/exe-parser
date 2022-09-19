@@ -123,15 +123,11 @@ void RecurseResourceTree(ResourceDirectoryHeader* pRoot,
       (std::string("%") + std::to_string(depth * 4) + std::string("s")).c_str();
 
   printf(indent, "");
-  printf("ResourceDirectoryHeader @ %p depth %i:\n", (void*)pResourceHeader,
-         depth);
+  printf("*ResourceDirectoryHeader @ %p:\n", (void*)pResourceHeader);
   printf(indent, "");
-  printf("version %i.%i\n", pResourceHeader->MajorVersion,
-         pResourceHeader->MinorVersion);
-  printf(indent, "");
-  printf("NumberOfNameEntries: %i\n", pResourceHeader->NumberOfNameEntries);
-  printf(indent, "");
-  printf("NumberOfIdEntries: %i\n", pResourceHeader->NumberOfIdEntries);
+  printf("v%i.%i nameEntries: %i idEntries: %i\n",
+         pResourceHeader->MajorVersion, pResourceHeader->NumberOfNameEntries,
+         pResourceHeader->NumberOfIdEntries, pResourceHeader->MinorVersion);
   printf("\n");
 
   auto pNameEntries =
@@ -146,9 +142,7 @@ void RecurseResourceTree(ResourceDirectoryHeader* pRoot,
     auto entry = pNameEntries[i];
 
     printf(indent, "");
-    printf("resource name entry %i\n", i);
-    printf(indent, "");
-    printf("NameOffset: 0x%08X\n", entry.NameOffset);
+    printf("*NAME Entry %i nameOffset: 0x%08X\n", i, entry.NameOffset);
 
     auto dataEntryOffset = GetDataEntryOffset(entry.Offset);
     if (dataEntryOffset > 0) {
@@ -159,6 +153,7 @@ void RecurseResourceTree(ResourceDirectoryHeader* pRoot,
     if (subdirectoryOffset > 0) {
       printf(indent, "");
       printf("subdirectoryOffset 0x%08X\n", subdirectoryOffset);
+
       printf("\n");
       RecurseResourceTree(
           pRoot,
@@ -170,10 +165,7 @@ void RecurseResourceTree(ResourceDirectoryHeader* pRoot,
   for (uint32_t i = 0; i < pResourceHeader->NumberOfIdEntries; i++) {
     auto entry = pIdEntries[i];
     printf(indent, "");
-    printf("resource id entry %i\n", i);
-    printf(indent, "");
-    printf("IntegerId: 0x%08X\n", entry.IntegerId);
-
+    printf("*ID Entry %i id: 0x%08X\n", i, entry.IntegerId);
     auto dataEntryOffset = GetDataEntryOffset(entry.Offset);
     if (dataEntryOffset > 0) {
       printf(indent, "");
@@ -183,6 +175,7 @@ void RecurseResourceTree(ResourceDirectoryHeader* pRoot,
     if (subdirectoryOffset > 0) {
       printf(indent, "");
       printf("subdirectoryOffset 0x%08X\n", subdirectoryOffset);
+
       printf("\n");
       RecurseResourceTree(
           pRoot,
