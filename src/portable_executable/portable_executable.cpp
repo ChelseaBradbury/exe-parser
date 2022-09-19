@@ -1,5 +1,7 @@
 #include "portable_executable.h"
 
+#include <string>
+
 void PrintHex(uint8_t* pData, uint32_t dataLen, uint32_t lineLen) {
   uint32_t localLen = dataLen + (dataLen % lineLen);
   uint8_t* pLocal = new uint8_t[localLen];
@@ -114,6 +116,83 @@ void PortableExecutable::MapImportDirectories() {
   printf("\n");
 }
 
+void RecurseResourceTree(ResourceDirectoryHeader* pRoot,
+                         ResourceDirectoryHeader* pResourceHeader,
+                         uint32_t depth) {
+  auto indent =
+      (std::string("%") + std::to_string(depth * 4) + std::string("s")).c_str();
+
+  printf(indent, "");
+  printf("ResourceDirectoryHeader @ %p depth %i:\n", (void*)pResourceHeader,
+         depth);
+  printf(indent, "");
+  printf("version %i.%i\n", pResourceHeader->MajorVersion,
+         pResourceHeader->MinorVersion);
+  printf(indent, "");
+  printf("NumberOfNameEntries: %i\n", pResourceHeader->NumberOfNameEntries);
+  printf(indent, "");
+  printf("NumberOfIdEntries: %i\n", pResourceHeader->NumberOfIdEntries);
+  printf("\n");
+
+  auto pNameEntries =
+      (ResourceDirectoryNameEntry*)((uint8_t*)(pResourceHeader) +
+                                    sizeof(ResourceDirectoryHeader));
+
+  auto pIdEntries =
+      (ResourceDirectoryIdEntry*)&pNameEntries[pResourceHeader
+                                                   ->NumberOfNameEntries];
+
+  for (uint32_t i = 0; i < pResourceHeader->NumberOfNameEntries; i++) {
+    auto entry = pNameEntries[i];
+
+    printf(indent, "");
+    printf("resource name entry %i\n", i);
+    printf(indent, "");
+    printf("NameOffset: 0x%08X\n", entry.NameOffset);
+
+    auto dataEntryOffset = GetDataEntryOffset(entry.Offset);
+    if (dataEntryOffset > 0) {
+      printf(indent, "");
+      printf("dataEntryOffset 0x%08X\n", dataEntryOffset);
+    }
+    auto subdirectoryOffset = GetSubdirectoryOffset(entry.Offset);
+    if (subdirectoryOffset > 0) {
+      printf(indent, "");
+      printf("subdirectoryOffset 0x%08X\n", subdirectoryOffset);
+      printf("\n");
+      RecurseResourceTree(
+          pRoot,
+          (ResourceDirectoryHeader*)((uint8_t*)(pRoot) + subdirectoryOffset),
+          depth + 1);
+    }
+  }
+
+  for (uint32_t i = 0; i < pResourceHeader->NumberOfIdEntries; i++) {
+    auto entry = pIdEntries[i];
+    printf(indent, "");
+    printf("resource id entry %i\n", i);
+    printf(indent, "");
+    printf("IntegerId: 0x%08X\n", entry.IntegerId);
+
+    auto dataEntryOffset = GetDataEntryOffset(entry.Offset);
+    if (dataEntryOffset > 0) {
+      printf(indent, "");
+      printf("dataEntryOffset 0x%08X\n", dataEntryOffset);
+    }
+    auto subdirectoryOffset = GetSubdirectoryOffset(entry.Offset);
+    if (subdirectoryOffset > 0) {
+      printf(indent, "");
+      printf("subdirectoryOffset 0x%08X\n", subdirectoryOffset);
+      printf("\n");
+      RecurseResourceTree(
+          pRoot,
+          (ResourceDirectoryHeader*)((uint8_t*)(pRoot) + subdirectoryOffset),
+          depth + 1);
+    }
+    printf("\n");
+  }
+}
+
 void PortableExecutable::ParseResourceSection() {
   // Resource Directory
   auto dir = this->m_pOpHeader->DataDirectory[2];
@@ -128,38 +207,9 @@ void PortableExecutable::ParseResourceSection() {
   auto pResourceHeader = (ResourceDirectoryHeader*)(this->m_pFile + fileOffset);
 
   PrintHex(this->m_pFile + fileOffset, 64, 16);
-
-  printf("ResourceDirectoryHeader:\n");
-  printf("version %i.%i\n", pResourceHeader->MajorVersion,
-         pResourceHeader->MinorVersion);
-  printf("NumberOfNameEntries: %i\n", pResourceHeader->NumberOfNameEntries);
-  printf("NumberOfIdEntries: %i\n", pResourceHeader->NumberOfIdEntries);
   printf("\n");
 
-  auto pNameEntries =
-      (ResourceDirectoryEntry*)(this->m_pFile + fileOffset +
-                                sizeof(ResourceDirectoryHeader));
-
-  auto pIdEntries = &pNameEntries[pResourceHeader->NumberOfNameEntries];
-
-  for (uint32_t i = 0; i < pResourceHeader->NumberOfNameEntries; i++) {
-    auto entry = pNameEntries[i];
-    printf("resource name entry %i\n", i);
-    printf("id: %i\n", entry.IntegerId);
-    printf("DataEntryOffset 0x%08X\n", entry.DataEntryOffset);
-    printf("SubdirectoryOffset 0x%08X\n", entry.SubdirectoryOffset);
-    printf("\n");
-  }
-
-  for (uint32_t i = 0; i < pResourceHeader->NumberOfIdEntries; i++) {
-    auto entry = pIdEntries[i];
-    printf("resource id entry %i\n", i);
-    printf("NameOffset: 0x%08X\n", entry.NameOffset);
-    printf("IntegerId: 0x%08X\n", entry.IntegerId);
-    printf("DataEntryOffset 0x%08X\n", entry.DataEntryOffset);
-    printf("SubdirectoryOffset 0x%08X\n", entry.SubdirectoryOffset);
-    printf("\n");
-  }
+  RecurseResourceTree(pResourceHeader, pResourceHeader, 0);
 
   printf("\n");
 }

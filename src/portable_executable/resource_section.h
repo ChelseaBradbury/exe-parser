@@ -13,9 +13,17 @@ PACK(struct ResourceDirectoryHeader {
   uint16_t NumberOfIdEntries;
 });
 
-PACK(struct ResourceDirectoryEntry {
+PACK(struct ResourceDirectoryNameEntry {
   uint32_t NameOffset;
-  uint32_t IntegerId;
-  uint32_t DataEntryOffset;
-  uint32_t SubdirectoryOffset;
+  uint32_t Offset;
 });
+
+PACK(struct ResourceDirectoryIdEntry {
+  uint32_t IntegerId;
+  uint32_t Offset;
+});
+
+const uint32_t EntryOffsetMask = 0b10000000000000000000000000000000;
+
+uint32_t GetDataEntryOffset(uint32_t offset);
+uint32_t GetSubdirectoryOffset(uint32_t offset);
