@@ -36,8 +36,9 @@ void PrintHex(uint8_t* pData, uint32_t dataLen, uint32_t lineLen) {
   delete[] pLocal;
 }
 
-PortableExecutable::PortableExecutable(uint8_t* pFile) {
+PortableExecutable::PortableExecutable(uint8_t* pFile, uint32_t fileSizeBytes) {
   this->m_pFile = pFile;
+  this->m_fileSizeBytes = fileSizeBytes;
 
   this->MapHeaders();
 }
@@ -88,32 +89,52 @@ void PortableExecutable::PrintFileInfo() {
          this->m_pOpHeader->MinorSubsystemVersion);
   printf("opHeader linker ver %i.%i\n", this->m_pOpHeader->MajorLinkerVersion,
          this->m_pOpHeader->MinorLinkerVersion);
+  printf("opHeader BaseOfCode 0x%08X\n", this->m_pOpHeader->BaseOfCode);
+  printf("opHeader BaseOfData 0x%08X\n", this->m_pOpHeader->BaseOfData);
+  printf("opHeader ImageBase 0x%08X\n", this->m_pOpHeader->ImageBase);
   printf("\n");
 }
 
 void PortableExecutable::PrintSectionInfo() {
+  for (int i = 0; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++) {
+    auto dir = this->m_pOpHeader->DataDirectory[i];
+
+    uint32_t dirOffset = (uint8_t*)(&this->m_pOpHeader->DataDirectory[i]) -
+                         (uint8_t*)this->m_pOpHeader;
+
+    printf("directory %i(%i/0x%08X): 0x%08X, %i\n", i, dirOffset, dirOffset,
+           dir.VirtualAddress, dir.Size);
+  }
+  printf("\n");
+
   // PE section headers
   for (int i = 0; i < this->m_pPeHeader->NumberOfSections; i++) {
-    auto pSectionHeader = this->m_pSectionHeaders[i];
+    auto pSectionHeader = &this->m_pSectionHeaders[i];
 
-    printf("section %i %s\n", i, pSectionHeader.Name);
+    uint32_t offset =
+        reinterpret_cast<uint8_t*>(&this->m_pSectionHeaders[i]) - this->m_pFile;
 
-    printf("  VirtualAddress 0x%08X\n", pSectionHeader.VirtualAddress);
-    printf("  SizeOfRawData 0x%08X\n", pSectionHeader.SizeOfRawData);
-    printf("  PointerToRawData 0x%08X\n", pSectionHeader.PointerToRawData);
+    printf("section %i %s 0x%08X -> %p\n", i, pSectionHeader->Name, offset,
+           pSectionHeader);
+
+    printf("  VirtualAddress 0x%08X\n", pSectionHeader->VirtualAddress);
+    printf("  SizeOfRawData 0x%08X\n", pSectionHeader->SizeOfRawData);
+    printf("  PointerToRawData 0x%08X\n", pSectionHeader->PointerToRawData);
     printf("  PointerToRelocations 0x%08X\n",
-           pSectionHeader.PointerToRelocations);
+           pSectionHeader->PointerToRelocations);
     printf("  PointerToLinenumbers 0x%08X\n",
-           pSectionHeader.PointerToLinenumbers);
+           pSectionHeader->PointerToLinenumbers);
     printf("  NumberOfRelocations 0x%08X\n",
-           pSectionHeader.NumberOfRelocations);
+           pSectionHeader->NumberOfRelocations);
     printf("  NumberOfLinenumbers 0x%08X\n",
-           pSectionHeader.NumberOfLinenumbers);
-    printf("  Characteristics 0x%08X\n", pSectionHeader.Characteristics);
+           pSectionHeader->NumberOfLinenumbers);
+    printf("  Characteristics 0x%08X\n", pSectionHeader->Characteristics);
     printf("\n");
 
+    /*
     PrintHex(this->m_pFile + pSectionHeader.PointerToRawData,
              pSectionHeader.SizeOfRawData, 48);
+    */
 
     printf("\n");
   }

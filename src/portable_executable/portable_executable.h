@@ -9,7 +9,7 @@
 
 class PortableExecutable {
 public:
-  PortableExecutable(uint8_t* pFile);
+  PortableExecutable(uint8_t* pFile, uint32_t fileSizeBytes);
   ~PortableExecutable();
 
   void PrintFileInfo();
@@ -19,6 +19,7 @@ protected:
   void MapHeaders();
 
   uint8_t* m_pFile = nullptr;
+  uint32_t m_fileSizeBytes = 0;
 
   DosHeader* m_pDosHeader = nullptr;
   PeHeader* m_pPeHeader = nullptr;

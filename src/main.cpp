@@ -13,14 +13,14 @@ void printHex(uint8_t* pData, uint32_t numBytes) {
 }
 
 int main() {
-  std::string filepath = "./exe/BF2_r.exe";
+  std::string filepath = "./exe/BF2.exe";
 
   int length;
   char* pFile = loadFileIntoMemory(filepath, length);
 
   printf("PE file length: %i\n", length);
 
-  PortableExecutable pe((uint8_t*)pFile);
+  PortableExecutable pe((uint8_t*)pFile, int32_t(length));
 
   pe.PrintFileInfo();
   pe.PrintSectionInfo();
