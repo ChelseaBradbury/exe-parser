@@ -41,6 +41,7 @@ PortableExecutable::PortableExecutable(uint8_t* pFile, uint32_t fileSizeBytes) {
   this->m_fileSizeBytes = fileSizeBytes;
 
   this->MapHeaders();
+  this->MapMemory();
 }
 
 PortableExecutable::~PortableExecutable() {}
@@ -53,6 +54,32 @@ void PortableExecutable::MapHeaders() {
       (uint8_t*)this->m_pPeHeader + sizeof(PeHeader));
   this->m_pSectionHeaders = reinterpret_cast<PeSectionHeader*>(
       (uint8_t*)this->m_pOpHeader + sizeof(PeOptionalHeader));
+}
+
+void PortableExecutable::MapMemory() {
+  for (int i = 0; i < this->m_pPeHeader->NumberOfSections; i++) {
+    auto secHdr = this->m_pSectionHeaders[i];
+
+    this->m_memoryMap.MapRange(secHdr.VirtualAddress, secHdr.Misc.VirtualSize,
+                               secHdr.PointerToRawData, secHdr.SizeOfRawData);
+  }
+
+  this->m_memoryMap.PrintFileRanges();
+
+  for (int i = 0; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++) {
+    auto dir = this->m_pOpHeader->DataDirectory[i];
+
+    if (dir.Size == 0) {
+      continue;
+    }
+
+    uint32_t fileOffset = this->m_memoryMap.GetFileOffset(dir.VirtualAddress);
+    printf("dir %i virt: 0x%08X file: 0x%08X size: %i\n", i, dir.VirtualAddress,
+           fileOffset, dir.Size);
+
+    PrintHex(this->m_pFile + fileOffset, dir.Size, 32);
+  }
+  printf("\n");
 }
 
 void PortableExecutable::PrintFileInfo() {
