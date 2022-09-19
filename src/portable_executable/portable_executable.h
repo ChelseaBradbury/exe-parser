@@ -3,6 +3,8 @@
 #include "dos_header.h"
 #include "pe_header.h"
 
+#include "import_section.h"
+
 #include "memory_map.h"
 
 #include "../cpputils/struct_pack.h"
@@ -21,6 +23,8 @@ protected:
   void MapHeaders();
   void MapMemory();
 
+  void MapImportDirectories();
+
   uint8_t* m_pFile = nullptr;
   uint32_t m_fileSizeBytes = 0;
 
@@ -28,6 +32,9 @@ protected:
   PeHeader* m_pPeHeader = nullptr;
   PeOptionalHeader* m_pOpHeader = nullptr;
   PeSectionHeader* m_pSectionHeaders = nullptr;
+
+  uint32_t m_numImportDirectories = 0;
+  ImportDirectory* m_pImportDirectories;
 
   MemoryMap m_memoryMap;
 };

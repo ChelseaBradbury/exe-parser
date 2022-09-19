@@ -42,6 +42,8 @@ PortableExecutable::PortableExecutable(uint8_t* pFile, uint32_t fileSizeBytes) {
 
   this->MapHeaders();
   this->MapMemory();
+
+  this->MapImportDirectories();
 }
 
 PortableExecutable::~PortableExecutable() {}
@@ -77,7 +79,35 @@ void PortableExecutable::MapMemory() {
     printf("dir %i virt: 0x%08X file: 0x%08X size: %i\n", i, dir.VirtualAddress,
            fileOffset, dir.Size);
 
-    PrintHex(this->m_pFile + fileOffset, dir.Size, 32);
+    //PrintHex(this->m_pFile + fileOffset, dir.Size, 48);
+  }
+  printf("\n");
+}
+
+void PortableExecutable::MapImportDirectories() {
+  // Import Table
+  auto dir = this->m_pOpHeader->DataDirectory[1];
+
+  if (dir.Size == 0) {
+    // No imports
+    this->m_numImportDirectories = 0;
+    return;
+  }
+
+  uint32_t fileOffset = this->m_memoryMap.GetFileOffset(dir.VirtualAddress);
+  this->m_pImportDirectories = (ImportDirectory*)(this->m_pFile + fileOffset);
+
+  // Count import directories
+  uint32_t i = 0;
+  for (; i < dir.Size / sizeof(ImportDirectory); i++) {
+    auto imp = this->m_pImportDirectories[i];
+    if (imp.ImportLookupTableRVA == 0) {
+      // This is the entry after the last valid entry
+      break;
+    }
+
+    uint32_t nameFileOffset = this->m_memoryMap.GetFileOffset(imp.NameRVA);
+    printf("import %s\n", (char*)(this->m_pFile + nameFileOffset));
   }
   printf("\n");
 }
