@@ -14,6 +14,8 @@ PortableExecutable::PortableExecutable(uint8_t* pFile, uint32_t fileSizeBytes) {
   this->MapImportDirectories();
 
   this->ParseResourceSection();
+
+  this->PrintSection(1);
 }
 
 PortableExecutable::~PortableExecutable() {}
@@ -146,7 +148,7 @@ void PortableExecutable::RecurseResourceTree(
 
       auto pData =
           this->m_pFile + this->m_memoryMap.GetFileOffset(pDataEntry->DataRVA);
-      PrintHex(pData, pDataEntry->Size, 96);
+      PrintHex(pData, pDataEntry->Size, 32);
     }
     auto subdirectoryOffset = GetSubdirectoryOffset(entry.Offset);
     if (subdirectoryOffset > 0) {
@@ -267,4 +269,26 @@ void PortableExecutable::PrintSectionInfo() {
 
     printf("\n");
   }
+}
+
+void PortableExecutable::PrintSection(uint32_t sectionIdx) {
+  auto pSectionHeader = &this->m_pSectionHeaders[sectionIdx];
+
+  uint32_t offset =
+      reinterpret_cast<uint8_t*>(&this->m_pSectionHeaders[sectionIdx]) -
+      this->m_pFile;
+
+  printf("section %i %s 0x%08X -> %p\n", sectionIdx, pSectionHeader->Name,
+         offset, pSectionHeader);
+
+  auto pData = this->m_pFile +
+               this->m_memoryMap.GetFileOffset(pSectionHeader->VirtualAddress);
+
+  uint32_t maxLen = 16384;
+  maxLen = 8192;
+  uint32_t len = pSectionHeader->SizeOfRawData;
+  if (len > maxLen)
+    len = maxLen;
+
+  PrintHex(pData, len, 32);
 }

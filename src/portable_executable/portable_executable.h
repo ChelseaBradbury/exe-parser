@@ -32,6 +32,8 @@ protected:
                            ResourceDirectoryHeader* pResourceHeader,
                            uint32_t depth);
 
+  void PrintSection(uint32_t sectionIdx);
+
   uint8_t* m_pFile = nullptr;
   uint32_t m_fileSizeBytes = 0;
 
