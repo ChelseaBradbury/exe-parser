@@ -165,7 +165,7 @@ void PortableExecutable::RecurseResourceTree(
 
 void PortableExecutable::ParseResourceSection() {
   // Resource Directory
-  auto dir = this->m_pOpHeader->DataDirectory[2];
+  auto dir = this->m_pOpHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE];
 
   if (dir.Size == 0) {
     // No resources
