@@ -56,7 +56,7 @@ void PortableExecutable::MapMemory() {
 
 void PortableExecutable::MapImportDirectories() {
   // Import Table
-  auto dir = this->m_pOpHeader->DataDirectory[1];
+  auto dir = this->m_pOpHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 
   if (dir.Size == 0) {
     // No imports
