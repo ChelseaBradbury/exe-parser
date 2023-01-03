@@ -28,6 +28,10 @@ protected:
 
   void ParseResourceSection();
 
+  void RecurseResourceTree(ResourceDirectoryHeader* pRoot,
+                           ResourceDirectoryHeader* pResourceHeader,
+                           uint32_t depth);
+
   uint8_t* m_pFile = nullptr;
   uint32_t m_fileSizeBytes = 0;
 

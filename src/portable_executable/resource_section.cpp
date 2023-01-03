@@ -5,7 +5,7 @@ uint32_t GetDataEntryOffset(uint32_t offset) {
   if (isSubdirectoryOffset) {
     return 0;
   }
-  return offset ^ EntryOffsetMask;
+  return offset;
 }
 
 uint32_t GetSubdirectoryOffset(uint32_t offset) {

@@ -27,3 +27,10 @@ const uint32_t EntryOffsetMask = 0b10000000000000000000000000000000;
 
 uint32_t GetDataEntryOffset(uint32_t offset);
 uint32_t GetSubdirectoryOffset(uint32_t offset);
+
+PACK(struct ResourceDataEntry {
+  uint32_t DataRVA;
+  uint32_t Size;
+  uint32_t Codepage;
+  uint32_t Reserved;
+});

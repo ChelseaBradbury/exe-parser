@@ -2,41 +2,7 @@
 
 #include <string>
 
-void PrintHex(uint8_t* pData, uint32_t dataLen, uint32_t lineLen) {
-  uint32_t localLen = dataLen + (dataLen % lineLen);
-  uint8_t* pLocal = new uint8_t[localLen];
-  memcpy(pLocal, pData, dataLen);
-
-  uint32_t numLines = localLen / lineLen;
-
-  uint8_t* pLine = new uint8_t[lineLen + 1];
-  pLine[lineLen] = 0x00;
-
-  for (uint32_t i = 0; i < numLines; i++) {
-    auto lineOffset = lineLen * i;
-    for (uint32_t j = 0; j < lineLen; j++) {
-      auto offset = lineOffset + j;
-      printf("%02X", *(pLocal + offset));
-
-      if (j % 2 == 1) {
-        printf(" ");
-      }
-
-      // Copy char to pLine
-      uint8_t chr = *(pLocal + offset);
-      if (chr <= 0x1F) {
-        pLine[j] = '.';
-      } else {
-        pLine[j] = chr;
-      }
-    }
-
-    printf("%s\n", pLine);
-  }
-
-  delete[] pLine;
-  delete[] pLocal;
-}
+#include "../cpputils/print.h"
 
 PortableExecutable::PortableExecutable(uint8_t* pFile, uint32_t fileSizeBytes) {
   this->m_pFile = pFile;
@@ -116,11 +82,12 @@ void PortableExecutable::MapImportDirectories() {
   printf("\n");
 }
 
-void RecurseResourceTree(ResourceDirectoryHeader* pRoot,
-                         ResourceDirectoryHeader* pResourceHeader,
-                         uint32_t depth) {
-  auto indent =
-      (std::string("%") + std::to_string(depth * 4) + std::string("s")).c_str();
+void PortableExecutable::RecurseResourceTree(
+    ResourceDirectoryHeader* pRoot, ResourceDirectoryHeader* pResourceHeader,
+    uint32_t depth) {
+
+  char indent[255];
+  sprintf(indent, "%%%is", depth * 4);
 
   printf(indent, "");
   printf("*ResourceDirectoryHeader @ %p:\n", (void*)pResourceHeader);
@@ -170,6 +137,16 @@ void RecurseResourceTree(ResourceDirectoryHeader* pRoot,
     if (dataEntryOffset > 0) {
       printf(indent, "");
       printf("dataEntryOffset 0x%08X\n", dataEntryOffset);
+      auto pDataEntry = (ResourceDataEntry*)((uint8_t*)pRoot + dataEntryOffset);
+
+      printf("\n");
+      printf(indent, "");
+      printf("*DataEntry offset: 0x%08X size: %i codePage: 0x%08X\n",
+             pDataEntry->DataRVA, pDataEntry->Size, pDataEntry->Codepage);
+
+      auto pData =
+          this->m_pFile + this->m_memoryMap.GetFileOffset(pDataEntry->DataRVA);
+      PrintHex(pData, pDataEntry->Size, 96);
     }
     auto subdirectoryOffset = GetSubdirectoryOffset(entry.Offset);
     if (subdirectoryOffset > 0) {
@@ -199,7 +176,7 @@ void PortableExecutable::ParseResourceSection() {
 
   auto pResourceHeader = (ResourceDirectoryHeader*)(this->m_pFile + fileOffset);
 
-  PrintHex(this->m_pFile + fileOffset, 64, 16);
+  PrintHex(this->m_pFile + fileOffset, 64, 48);
   printf("\n");
 
   RecurseResourceTree(pResourceHeader, pResourceHeader, 0);
